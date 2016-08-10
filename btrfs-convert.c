@@ -2920,9 +2920,9 @@ static void print_usage(void)
 	printf("\t-r|--rollback          roll back to the original filesystem\n");
 	printf("\t-l|--label LABEL       set filesystem label\n");
 	printf("\t-L|--copy-label        use label from converted filesystem\n");
-	printf("\t-p|--progress          show converting progress (default)\n");
+	printf("\t-p|--progress          show converting progress\n");
 	printf("\t-O|--features LIST     comma separated list of filesystem features\n");
-	printf("\t--no-progress          show only overview, not the detailed progress\n");
+	printf("\t--no-progress          show only overview, not the detailed progress(default)\n");
 }
 
 int main(int argc, char *argv[])
@@ -2936,7 +2936,7 @@ int main(int argc, char *argv[])
 	int rollback = 0;
 	int copylabel = 0;
 	int usage_error = 0;
-	int progress = 1;
+	int progress = 0;
 	char *file;
 	char fslabel[BTRFS_LABEL_SIZE];
 	u64 features = BTRFS_MKFS_DEFAULT_FEATURES;
