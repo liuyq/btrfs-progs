@@ -86,25 +86,6 @@ LOCAL_EXPORT_C_INCLUDES := $(common_C_INCLUDES)
 #LOCAL_MODULE_TAGS := optional
 include $(BUILD_EXECUTABLE)
 
-#----------------------------------------------------------
-include $(CLEAR_VARS)
-LOCAL_MODULE := mkfs.btrfs
-LOCAL_SRC_FILES := \
-                $(objects) \
-                mkfs.c
-
-LOCAL_C_INCLUDES := $(common_C_INCLUDES)
-LOCAL_CFLAGS := $(STATIC_CFLAGS)
-#LOCAL_LDLIBS := $(LIBBTRFS_LIBS)
-#LOCAL_LDFLAGS := $(STATIC_LDFLAGS)
-LOCAL_SHARED_LIBRARIES := $(btrfs_shared_libraries)
-LOCAL_STATIC_LIBRARIES := libbtrfs liblzo
-LOCAL_SYSTEM_SHARED_LIBRARIES := libc libcutils
-
-LOCAL_EXPORT_C_INCLUDES := $(common_C_INCLUDES)
-#LOCAL_MODULE_TAGS := optional
-include $(BUILD_EXECUTABLE)
-
 #---------------------------------------------------------------
 include $(CLEAR_VARS)
 LOCAL_MODULE := btrfstune
@@ -125,6 +106,36 @@ LOCAL_EXPORT_C_INCLUDES := $(common_C_INCLUDES)
 LOCAL_MODULE_TAGS := optional
 include $(BUILD_EXECUTABLE)
 #--------------------------------------------------------------
+
+#----------------------------------------------------------
+include $(CLEAR_VARS)
+LOCAL_MODULE := mkfs.btrfs
+LOCAL_SRC_FILES := \
+                $(objects) \
+                mkfs.c
+
+LOCAL_C_INCLUDES := $(common_C_INCLUDES)
+LOCAL_SHARED_LIBRARIES := $(btrfs_shared_libraries)
+
+LOCAL_CFLAGS := \
+			-DBTRFS_FLAT_INCLUDES \
+			-D__USE_GNU \
+			-include config.h \
+			\
+
+LOCAL_EXPORT_C_INCLUDES := $(common_C_INCLUDES)
+LOCAL_FORCE_STATIC_EXECUTABLE := true
+LOCAL_STATIC_LIBRARIES += \
+				libbtrfs \
+				liblzo \
+				libext2_uuid_static \
+				libext2_blkid \
+				\
+
+LOCAL_STATIC_LIBRARIES += libc
+LOCAL_MODULE_PATH := $(TARGET_ROOT_OUT_SBIN)
+
+include $(BUILD_EXECUTABLE)
 
 #----------------------------------------------------------
 include $(CLEAR_VARS)
@@ -164,7 +175,6 @@ LOCAL_CFLAGS := \
 			-DBTRFS_FLAT_INCLUDES \
 			-D__USE_GNU \
 
-
 LOCAL_STATIC_LIBRARIES := \
 				libbtrfs \
 				liblzo \
@@ -178,6 +188,6 @@ LOCAL_STATIC_LIBRARIES += libc
 
 LOCAL_FORCE_STATIC_EXECUTABLE := true
 
-LOCAL_MODULE_PATH := $(TARGET_ROOT_OUT)
+LOCAL_MODULE_PATH := $(TARGET_ROOT_OUT_SBIN)
 
 include $(BUILD_EXECUTABLE)
