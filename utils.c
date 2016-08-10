@@ -1631,57 +1631,6 @@ err_nomem:
 	return -ENOMEM;
 }
 
-static int btrfs_wipe_existing_sb(int fd)
-{
-	const char *off = NULL;
-	size_t len = 0;
-	loff_t offset;
-	char buf[BUFSIZ];
-	int ret = 0;
-	blkid_probe pr = NULL;
-
-	pr = blkid_new_probe();
-	if (!pr)
-		return -1;
-
-	if (blkid_probe_set_device(pr, fd, 0, 0)) {
-		ret = -1;
-		goto out;
-	}
-
-	ret = blkid_probe_lookup_value(pr, "SBMAGIC_OFFSET", &off, NULL);
-	if (!ret)
-		ret = blkid_probe_lookup_value(pr, "SBMAGIC", NULL, &len);
-
-	if (ret || len == 0 || off == NULL) {
-		/*
-		 * If lookup fails, the probe did not find any values, eg. for
-		 * a file image or a loop device. Soft error.
-		 */
-		ret = 1;
-		goto out;
-	}
-
-	offset = strtoll(off, NULL, 10);
-	if (len > sizeof(buf))
-		len = sizeof(buf);
-
-	memset(buf, 0, len);
-	ret = pwrite(fd, buf, len, offset);
-	if (ret < 0) {
-		error("cannot wipe existing superblock: %s", strerror(errno));
-		ret = -1;
-	} else if (ret != len) {
-		error("cannot wipe existing superblock: wrote %d of %zd", ret, len);
-		ret = -1;
-	}
-	fsync(fd);
-
-out:
-	blkid_free_probe(pr);
-	return ret;
-}
-
 int btrfs_prepare_device(int fd, const char *file, int zero_end,
 		u64 *block_count_ret, u64 max_block_count, int discard)
 {
@@ -1728,13 +1677,13 @@ int btrfs_prepare_device(int fd, const char *file, int zero_end,
 		error("failed to zero device '%s': %s", file, strerror(-ret));
 		return 1;
 	}
-
+/*
 	ret = btrfs_wipe_existing_sb(fd);
 	if (ret < 0) {
 		error("cannot wipe superblocks on %s", file);
 		return 1;
 	}
-
+*/
 	*block_count_ret = block_count;
 	return 0;
 }
@@ -3165,84 +3114,6 @@ out:
 	return ret;
 }
 
-/*
- * Check for existing filesystem or partition table on device.
- * Returns:
- *	 1 for existing fs or partition
- *	 0 for nothing found
- *	-1 for internal error
- */
-static int check_overwrite(const char *device)
-{
-	const char	*type;
-	blkid_probe	pr = NULL;
-	int		ret;
-	blkid_loff_t	size;
-
-	if (!device || !*device)
-		return 0;
-
-	ret = -1; /* will reset on success of all setup calls */
-
-	pr = blkid_new_probe_from_filename(device);
-	if (!pr)
-		goto out;
-
-	size = blkid_probe_get_size(pr);
-	if (size < 0)
-		goto out;
-
-	/* nothing to overwrite on a 0-length device */
-	if (size == 0) {
-		ret = 0;
-		goto out;
-	}
-
-	ret = blkid_probe_enable_partitions(pr, 1);
-	if (ret < 0)
-		goto out;
-
-	ret = blkid_do_fullprobe(pr);
-	if (ret < 0)
-		goto out;
-
-	/*
-	 * Blkid returns 1 for nothing found and 0 when it finds a signature,
-	 * but we want the exact opposite, so reverse the return value here.
-	 *
-	 * In addition print some useful diagnostics about what actually is
-	 * on the device.
-	 */
-	if (ret) {
-		ret = 0;
-		goto out;
-	}
-
-	if (!blkid_probe_lookup_value(pr, "TYPE", &type, NULL)) {
-		fprintf(stderr,
-			"%s appears to contain an existing "
-			"filesystem (%s).\n", device, type);
-	} else if (!blkid_probe_lookup_value(pr, "PTTYPE", &type, NULL)) {
-		fprintf(stderr,
-			"%s appears to contain a partition "
-			"table (%s).\n", device, type);
-	} else {
-		fprintf(stderr,
-			"%s appears to contain something weird "
-			"according to blkid\n", device);
-	}
-	ret = 1;
-
-out:
-	if (pr)
-		blkid_free_probe(pr);
-	if (ret == -1)
-		fprintf(stderr,
-			"probe of %s failed, cannot detect "
-			  "existing filesystem.\n", device);
-	return ret;
-}
-
 static int group_profile_devs_min(u64 flag)
 {
 	switch (flag & BTRFS_BLOCK_GROUP_PROFILE_MASK) {
@@ -3345,13 +3216,15 @@ int test_dev_for_mkfs(const char *file, int force_overwrite)
 		error("%s is a swap device", file);
 		return 1;
 	}
-	if (!force_overwrite) {
+	/*
+    if (!force_overwrite) {
 		if (check_overwrite(file)) {
 			error("use the -f option to force overwrite of %s",
 					file);
 			return 1;
 		}
 	}
+    */
 	ret = check_mounted(file);
 	if (ret < 0) {
 		error("cannot check mount status of %s: %s", file,

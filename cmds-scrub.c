@@ -1515,10 +1515,11 @@ static int scrub_start(int argc, char **argv, int resume)
 	}
 
 	/* check for errors returned from the progress thread itself */
-	if (do_print && terr && terr != PTHREAD_CANCELED)
+	/*
+    if (do_print && terr && terr != PTHREAD_CANCELED)
 		error("recording progress failed: %s",
 			strerror(-PTR_ERR(terr)));
-
+*/
 	if (do_record) {
 		ret = scrub_write_progress(&spc_write_mutex, fsid, sp,
 					   fi_args.num_devices);

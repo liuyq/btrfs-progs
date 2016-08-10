@@ -186,14 +186,9 @@ static void check_options(int argc, char **argv)
 static const struct cmd_group btrfs_cmd_group = {
 	btrfs_cmd_group_usage, btrfs_cmd_group_info, {
 		{ "subvolume", cmd_subvolume, NULL, &subvolume_cmd_group, 0 },
-		{ "filesystem", cmd_filesystem, NULL, &filesystem_cmd_group, 0 },
 		{ "balance", cmd_balance, NULL, &balance_cmd_group, 0 },
 		{ "device", cmd_device, NULL, &device_cmd_group, 0 },
 		{ "scrub", cmd_scrub, NULL, &scrub_cmd_group, 0 },
-		{ "check", cmd_check, cmd_check_usage, NULL, 0 },
-		{ "rescue", cmd_rescue, NULL, &rescue_cmd_group, 0 },
-		{ "restore", cmd_restore, cmd_restore_usage, NULL, 0 },
-		{ "inspect-internal", cmd_inspect, NULL, &inspect_cmd_group, 0 },
 		{ "property", cmd_property, NULL, &property_cmd_group, 0 },
 		{ "send", cmd_send, cmd_send_usage, NULL, 0 },
 		{ "receive", cmd_receive, cmd_receive_usage, NULL, 0 },

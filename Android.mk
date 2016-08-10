@@ -3,16 +3,17 @@ LOCAL_PATH:= $(call my-dir)
 #include $(call all-subdir-makefiles)
 
 CFLAGS := -g -O1 -Wall -D_FORTIFY_SOURCE=2 -include config.h \
-	-DBTRFS_FLAT_INCLUDES -D_XOPEN_SOURCE=700 -fno-strict-aliasing -fPIC
+	-DBTRFS_FLAT_INCLUDES -D_XOPEN_SOURCE=700 -fno-strict-aliasing -fPIC \
+	-DANDROID \
 
 LDFLAGS := -static -rdynamic
 
-LIBS := -luuid   -lblkid   -lz   -llzo2 -L. -lpthread
+LIBS := -luuid   -lblkid   -lz   -llzo -L. -lpthread
 LIBBTRFS_LIBS := $(LIBS)
 
 STATIC_CFLAGS := $(CFLAGS) -ffunction-sections -fdata-sections
 STATIC_LDFLAGS := -static -Wl,--gc-sections
-STATIC_LIBS := -luuid   -lblkid -luuid -lz   -llzo2 -L. -pthread
+STATIC_LIBS := -luuid   -lblkid -luuid -lz   -llzo -L. -pthread
 
 btrfs_shared_libraries := libext2_uuid \
 			libext2_blkid
@@ -23,11 +24,26 @@ objects := ctree.c disk-io.c radix-tree.c extent-tree.c print-tree.c \
           qgroup.c raid6.c free-space-cache.c list_sort.c props.c \
           ulist.c qgroup-verify.c backref.c string-table.c task-utils.c \
           inode.c file.c find-root.c
-cmds_objects := cmds-subvolume.c cmds-filesystem.c cmds-device.c cmds-scrub.c \
-               cmds-inspect.c cmds-balance.c cmds-send.c cmds-receive.c \
-               cmds-quota.c cmds-qgroup.c cmds-replace.c cmds-check.c \
-               cmds-restore.c cmds-rescue.c chunk-recover.c super-recover.c \
-               cmds-property.c cmds-fi-usage.c
+cmds_objects := cmds-subvolume.c \
+				cmds-device.c \
+				cmds-scrub.c \
+			   cmds-balance.c \
+			   cmds-send.c \
+			   cmds-receive.c \
+               cmds-quota.c \
+			   cmds-qgroup.c \
+			   cmds-replace.c \
+			   super-recover.c \
+               cmds-property.c \
+			   cmds-fi-usage.c
+
+#   chunk-recover.c \
+               cmds-restore.c \
+			   cmds-rescue.c \
+			   cmds-check.c \
+               cmds-inspect.c \
+				cmds-filesystem.c \
+
 libbtrfs_objects := send-stream.c send-utils.c rbtree.c btrfs-list.c crc32c.c \
                    uuid-tree.c utils-lib.c rbtree-utils.c
 libbtrfs_headers := send-stream.h send-utils.h send.h rbtree.h btrfs-list.h \
@@ -38,7 +54,7 @@ blkid_objects := partition/ superblocks/ topology/
 
 
 # external/e2fsprogs/lib is needed for uuid/uuid.h
-common_C_INCLUDES := $(LOCAL_PATH) external/e2fsprogs/lib/ external/lzo/include/ external/zlib/
+common_C_INCLUDES := $(LOCAL_PATH) external/e2fsprogs/lib/ external/lzo/lzo-src/include/ external/zlib/
 
 #----------------------------------------------------------
 include $(CLEAR_VARS)
@@ -63,7 +79,7 @@ LOCAL_CFLAGS := $(STATIC_CFLAGS)
 #LOCAL_LDLIBS := $(LIBBTRFS_LIBS)
 #LOCAL_LDFLAGS := $(STATIC_LDFLAGS)
 LOCAL_SHARED_LIBRARIES := $(btrfs_shared_libraries)
-LOCAL_STATIC_LIBRARIES := libbtrfs liblzo-static libz
+LOCAL_STATIC_LIBRARIES := libbtrfs liblzo libz
 LOCAL_SYSTEM_SHARED_LIBRARIES := libc libcutils
 
 LOCAL_EXPORT_C_INCLUDES := $(common_C_INCLUDES)
@@ -82,7 +98,7 @@ LOCAL_CFLAGS := $(STATIC_CFLAGS)
 #LOCAL_LDLIBS := $(LIBBTRFS_LIBS)
 #LOCAL_LDFLAGS := $(STATIC_LDFLAGS)
 LOCAL_SHARED_LIBRARIES := $(btrfs_shared_libraries)
-LOCAL_STATIC_LIBRARIES := libbtrfs liblzo-static
+LOCAL_STATIC_LIBRARIES := libbtrfs liblzo
 LOCAL_SYSTEM_SHARED_LIBRARIES := libc libcutils
 
 LOCAL_EXPORT_C_INCLUDES := $(common_C_INCLUDES)
@@ -102,10 +118,63 @@ LOCAL_SHARED_LIBRARIES := $(btrfs_shared_libraries)
 #LOCAL_LDLIBS := $(LIBBTRFS_LIBS)
 #LOCAL_LDFLAGS := $(STATIC_LDFLAGS)
 LOCAL_SHARED_LIBRARIES := $(btrfs_shared_libraries)
-LOCAL_STATIC_LIBRARIES := libbtrfs liblzo-static
+LOCAL_STATIC_LIBRARIES := libbtrfs liblzo
 LOCAL_SYSTEM_SHARED_LIBRARIES := libc libcutils
 
 LOCAL_EXPORT_C_INCLUDES := $(common_C_INCLUDES)
 LOCAL_MODULE_TAGS := optional
 include $(BUILD_EXECUTABLE)
 #--------------------------------------------------------------
+
+#----------------------------------------------------------
+include $(CLEAR_VARS)
+LOCAL_MODULE := btrfs-convert
+LOCAL_SRC_FILES := \
+                btrfs-convert.c \
+				crc32c.c \
+				ctree.c \
+				dir-item.c \
+				disk-io.c \
+				extent-cache.c \
+				extent-tree.c \
+				extent_io.c \
+				file-item.c \
+				print-tree.c \
+				rbtree.c \
+				rbtree-utils.c \
+				repair.c \
+				volumes.c \
+				raid6.c \
+				free-space-cache.c \
+				root-tree.c \
+				inode.c \
+				inode-item.c \
+				inode-map.c \
+				task-utils.c \
+				utils.c \
+
+LOCAL_EXPORT_C_INCLUDES := $(common_C_INCLUDES)
+LOCAL_C_INCLUDES := $(common_C_INCLUDES)
+LOCAL_C_INCLUDES += \
+			external/e2fsprogs/lib \
+			external/btrfs-progs \
+			external/e2fsprogs/lib/blkid \
+
+LOCAL_CFLAGS := \
+			-DBTRFS_FLAT_INCLUDES \
+			-D__USE_GNU \
+
+
+LOCAL_STATIC_LIBRARIES := \
+				libbtrfs \
+				liblzo \
+				libext2fs \
+				libext2_com_err \
+				libext2_uuid_static \
+				libext2_blkid \
+				\
+
+LOCAL_STATIC_LIBRARIES += libc
+
+LOCAL_FORCE_STATIC_EXECUTABLE := true
+include $(BUILD_EXECUTABLE)
